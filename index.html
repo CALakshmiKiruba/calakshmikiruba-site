@@ -200,7 +200,9 @@ body.rail-open .shell{margin-left:var(--rail-open)}
 .quals td:first-child{font-weight:600}
 .quals td:nth-child(3){white-space:nowrap}
 .quals td:nth-child(2),.quals td:nth-child(4){color:var(--muted)}
-.quals tr.now td:nth-child(3){color:var(--forest);font-weight:600}
+.quals tr.now td{background:#F4F2F3;color:#A39AA0 !important;font-weight:400}
+.quals tr.now td:first-child{font-weight:500}
+.quals tr.now td:nth-child(3){font-style:italic}
 
 /* ---------- Direction / Beyond ---------- */
 .direction{background:var(--forest);color:#fff}
@@ -264,6 +266,43 @@ body.locked{overflow:hidden}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;font-size:.92rem;opacity:0;pointer-events:none;transition:opacity .2s;z-index:70}
 .toast.show{opacity:1}
 
+
+/* ---------- CV viewer ---------- */
+.viewer{position:fixed;inset:0;z-index:55;background:rgba(42,31,36,.75);display:flex;flex-direction:column;padding:24px;gap:10px}
+.viewer[hidden]{display:none}
+.vbar{display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:980px;width:100%;margin:0 auto}
+.vtitle{color:#fff;font-family:var(--serif);font-size:1.2rem;font-weight:600}
+.vacts{display:flex;align-items:center;gap:12px}
+.vacts .btn3d{text-decoration:none;font-size:.9rem;padding:8px 14px}
+.vclose{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.15);color:#fff;font-size:1.6rem;line-height:1;cursor:pointer}
+.vclose:hover{background:rgba(255,255,255,.3)}
+.viewer iframe{flex:1;width:100%;max-width:980px;margin:0 auto;border:0;border-radius:10px;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+
+/* ---------- Community timeline ---------- */
+.ctl{margin:6px 0 18px;padding:16px 16px 6px;border-radius:12px;background:linear-gradient(180deg,#F3F9EE,#fff);border:1px solid #DCEBD0}
+.ctl-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.ctl-top h4{font-size:1.05rem;color:var(--forest)}
+.ctl-years{display:flex;gap:6px}
+.yr{cursor:pointer;font-size:.82rem;font-weight:600;padding:4px 12px;border-radius:999px;border:1px solid #CFE3C0;background:linear-gradient(180deg,#fff,#EEF6E8);color:var(--forest);box-shadow:0 2px 0 #CFE3C0}
+.yr[aria-selected="true"]{background:linear-gradient(180deg,#0B6A17,var(--forest));color:#fff;border-color:var(--forest);transform:translateY(1px);box-shadow:none}
+.ctl-list{list-style:none;margin:0;padding:0 0 0 18px;position:relative}
+.ctl-list::before{content:"";position:absolute;left:5px;top:8px;bottom:14px;width:2px;background:linear-gradient(180deg,var(--pink),var(--green))}
+.ctl-list>li{position:relative;padding-bottom:6px;opacity:0;transform:translateY(6px);animation:inpt .4s ease forwards}
+.ctl-list>li::before{content:"";position:absolute;left:-18px;top:13px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--green)}
+.ctl-list>li.is-up::before{border-color:var(--pink);box-shadow:0 0 0 4px rgba(230,115,172,.2)}
+.ctl-head{display:grid;grid-template-columns:1fr;gap:1px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--ink)}
+.ctl-head:hover{background:rgba(70,145,16,.07)}
+.ctl-date{font-size:.78rem;color:var(--muted)}
+.ctl-name{font-weight:600;font-size:.93rem;line-height:1.35}
+.ctl-tags{display:flex;gap:6px;margin-top:3px}
+.tag{font-size:.7rem;font-weight:600;padding:1px 8px;border-radius:999px;background:#EAF4E3;color:var(--forest)}
+.tag.up{background:#FBE1EE;color:var(--wine)}
+.ctl-more{display:none;padding:2px 8px 8px}
+.ctl-list>li.open .ctl-more{display:block}
+.ctl-more .tlabel{font-size:.76rem;font-weight:600;color:var(--forest);margin:0 0 4px}
+.ctl-more ul{margin:0;padding-left:1.1em;font-size:.9rem}
+.post .body h5{font-family:var(--serif);font-size:1.05rem;color:var(--wine);margin:1.1em 0 .3em}
+
 /* ---------- Tablet and phone ---------- */
 @media (max-width:1000px){
   .figures{grid-template-columns:1fr 1fr}
@@ -307,6 +346,7 @@ body.locked{overflow:hidden}
   .route .pulse{animation:none !important;opacity:0}
   .panel li{animation:none;opacity:1;transform:none}
   .drawer{animation:none}
+  .ctl-list>li{animation:none;opacity:1;transform:none}
 }
 </style>
 
@@ -449,6 +489,7 @@ body.locked{overflow:hidden}
           <div class="bcol">
             <h3>Singapore life and community</h3>
             <p class="bsub">My experience since moving to Singapore, plus events, conferences and volunteering.</p>
+            <div class="ctl" id="ctl" hidden></div>
             <div id="posts-sg" aria-live="polite"><p class="empty">Loading posts</p></div>
           </div>
         </div>
@@ -491,6 +532,18 @@ body.locked{overflow:hidden}
       </div>
     </div>
   </aside>
+
+  <!-- CV viewer -->
+  <div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="My CV" hidden>
+    <div class="vbar">
+      <span class="vtitle">Curriculum vitae</span>
+      <div class="vacts">
+        <a class="btn3d" id="v-dl" href="#" download>Download</a>
+        <button class="vclose" id="v-close" type="button" aria-label="Close CV">&times;</button>
+      </div>
+    </div>
+    <iframe id="v-frame" title="CV of Lakshmi Kiruba Ananthanarayanan"></iframe>
+  </div>
 
   <p class="toast" id="toast" role="status" aria-live="polite"></p>
 
@@ -577,13 +630,43 @@ body.locked{overflow:hidden}
   }
 
   // ---------- Buttons ----------
+  var cvUrl = null;
+  function cvBlobUrl() {
+    if (cvUrl) return Promise.resolve(cvUrl);
+    return call("resume").then(function (r) {
+      var bytes = atob(r.data), arr = new Uint8Array(bytes.length);
+      for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      cvUrl = URL.createObjectURL(new Blob([arr], { type: r.mime }));
+      $("v-dl").setAttribute("href", cvUrl); $("v-dl").setAttribute("download", r.name);
+      return cvUrl;
+    });
+  }
+  var viewer = $("viewer"), viewerFrom = null;
+  function openViewer(url) {
+    viewerFrom = document.activeElement;
+    $("v-frame").src = url;
+    viewer.hidden = false; document.body.classList.add("locked");
+    $("v-close").focus();
+  }
+  function closeViewer() {
+    viewer.hidden = true; document.body.classList.remove("locked");
+    if (viewerFrom) viewerFrom.focus();
+  }
+  $("v-close").addEventListener("click", closeViewer);
+  document.addEventListener("keydown", function (e) { if (!viewer.hidden && e.key === "Escape") closeViewer(); });
   function cvButton(style) {
-    var b = el("button", { cls: "btn " + style, type: "button", text: "Download my CV" });
+    var b = el("button", { cls: "btn " + style, type: "button", text: "View my CV" });
     b.addEventListener("click", function () {
+      // On phones the CV opens in a new tab, since phones cannot show a PDF inside the page
+      var tab = mobile.matches ? window.open("", "_blank") : null;
+      if (tab) tab.document.title = "Loading CV";
       b.disabled = true;
-      call("resume").then(function (r) { download(r); toast("CV downloaded"); })
-        .catch(function (e) { toast(e.message || "CV download failed. Please reload the page."); })
-        .finally(function () { b.disabled = false; });
+      cvBlobUrl().then(function (url) {
+        if (tab) tab.location.href = url; else openViewer(url);
+      }).catch(function (e) {
+        if (tab) tab.close();
+        toast(e.message || "The CV could not open. Please reload the page.");
+      }).finally(function () { b.disabled = false; });
     });
     return b;
   }
@@ -784,7 +867,10 @@ body.locked{overflow:hidden}
 
   // ---------- Blog (two columns) ----------
   function postNode(post) {
-    var body = el("div", { cls: "body" }, post.body.split(/\n\s*\n/).map(function (para) { return el("p", { text: para.trim() }); }));
+    var body = el("div", { cls: "body" }, post.body.split(/\n\s*\n/).map(function (para) {
+      para = para.trim();
+      return para.indexOf("## ") === 0 ? el("h5", { text: para.slice(3) }) : el("p", { text: para });
+    }));
     var toggle = el("button", { cls: "linkbtn", type: "button", "aria-expanded": "false", text: "Read post" });
     var art = el("article", { cls: "post" }, [
       el("p", { cls: "pmeta", text: post.date + (post.tag ? ", " + post.tag : "") }),
@@ -808,7 +894,57 @@ body.locked{overflow:hidden}
   }
 
   // ---------- CA Chapter panel ----------
-  var drawer = $("chapter"), scrim = $("scrim"), opener = $("chapter-btn"), eventsLoaded = false, lastFocus = null;
+  var drawer = $("chapter"), scrim = $("scrim"), opener = $("chapter-btn"), eventsLoaded = false, lastFocus = null, eventsP = null;
+  function loadEvents() {
+    if (!eventsP) eventsP = call("events").then(function (r) { return r.events || []; })
+      .catch(function (e) { eventsP = null; throw e; });
+    return eventsP;
+  }
+  function isUpcoming(ev) { return ev.sort && ev.sort > Date.now() - 86400000 && !ev.takeaways.length; }
+
+  // Year-by-year community timeline in the Singapore blog column
+  function renderTimeline(list) {
+    var box = $("ctl");
+    if (!list.length) { box.hidden = true; return; }
+    var byYear = {};
+    list.forEach(function (ev) {
+      var y = String(ev.sort ? new Date(ev.sort).getFullYear() : new Date().getFullYear());
+      (byYear[y] = byYear[y] || []).push(ev);
+    });
+    var years = Object.keys(byYear).sort().reverse();
+    var yearBar = el("div", { cls: "ctl-years", role: "tablist", "aria-label": "Year" });
+    var listBox = el("ol", { cls: "ctl-list" });
+    function showYear(y) {
+      yearBar.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-selected", String(b.textContent === y)); });
+      var items = byYear[y].slice().sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); });
+      fill(listBox, items.map(function (ev, k) {
+        var up = isUpcoming(ev);
+        var head = el("button", { cls: "ctl-head", type: "button", "aria-expanded": "false" }, [
+          el("span", { cls: "ctl-date", text: ev.date || "Date to be added" }),
+          el("span", { cls: "ctl-name", text: ev.name }),
+          el("span", { cls: "ctl-tags" }, [ev.format ? el("span", { cls: "tag", text: ev.format }) : null, up ? el("span", { cls: "tag up", text: "Upcoming" }) : null])
+        ]);
+        var more = el("div", { cls: "ctl-more" }, ev.takeaways.length
+          ? [el("p", { cls: "tlabel", text: "What I took away" }), el("ul", null, ev.takeaways.map(function (x) { return el("li", { text: x }); }))]
+          : [el("p", { cls: "tlabel", text: up ? "I will share my takeaways after the session." : "Takeaways coming soon." })]);
+        var li = el("li", { cls: up ? "is-up" : "" }, [head, more]);
+        li.style.animationDelay = (k * 80) + "ms";
+        head.addEventListener("click", function () {
+          var open = li.classList.toggle("open");
+          head.setAttribute("aria-expanded", String(open));
+        });
+        return li;
+      }));
+    }
+    fill(yearBar, years.map(function (y) {
+      var b = el("button", { cls: "yr", type: "button", role: "tab", "aria-selected": "false", text: y });
+      b.addEventListener("click", function () { showYear(y); });
+      return b;
+    }));
+    fill(box, [el("div", { cls: "ctl-top" }, [el("h4", { text: "My community timeline" }), yearBar]), listBox]);
+    box.hidden = false;
+    showYear(years[0]);
+  }
   function renderEvents(list) {
     if (!list.length) { fill("ch-events", [el("p", { cls: "empty", text: "Events will be added soon." })]); return; }
     fill("ch-events", list.map(function (ev) {
@@ -816,7 +952,7 @@ body.locked{overflow:hidden}
       return el("article", { cls: "event" }, [
         el("p", { cls: "emeta", text: meta }),
         el("h4", { text: ev.name }),
-        ev.takeaways.length ? el("p", { cls: "tlabel", text: "What I took away" }) : null,
+        ev.takeaways.length ? el("p", { cls: "tlabel", text: "What I took away" }) : el("p", { cls: "tlabel", text: isUpcoming(ev) ? "Upcoming. Takeaways after the session." : "Takeaways coming soon." }),
         ev.takeaways.length ? el("ul", null, ev.takeaways.map(function (x) { return el("li", { text: x }); })) : null
       ]);
     }));
@@ -828,7 +964,7 @@ body.locked{overflow:hidden}
     $("chapter-close").focus();
     if (!eventsLoaded) {
       eventsLoaded = true;
-      call("events").then(function (r) { renderEvents(r.events || []); })
+      loadEvents().then(renderEvents)
         .catch(function () { eventsLoaded = false; fill("ch-events", [el("p", { cls: "empty", text: "Events could not load. Please try again." })]); });
     }
   }
@@ -872,6 +1008,7 @@ body.locked{overflow:hidden}
   }).catch(function () {});
   call("posts").then(function (r) { renderPosts(r.posts || []); })
     .catch(function () { ["posts-pro", "posts-sg"].forEach(function (id) { fill(id, [el("p", { cls: "empty", text: "Posts could not load. Please reload the page." })]); }); });
+  loadEvents().then(renderTimeline).catch(function () { $("ctl").hidden = true; });
   document.addEventListener("contextmenu", function (e) { if (e.target.closest(".portrait")) e.preventDefault(); });
 })();
 </script>
